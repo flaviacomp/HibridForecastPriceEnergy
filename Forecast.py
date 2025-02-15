@@ -325,7 +325,7 @@ def treinando_residuo(df_, forecast_result_seasonal, meses_forecast):
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    treinar_novo_modelo = True
+    treinar_novo_modelo = False
 
     df_normalizado, scaler_LPC = preparacao_dados('db.csv', ';')
 
