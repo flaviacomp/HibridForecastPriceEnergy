@@ -71,8 +71,8 @@ def treinando_sazonalidade(df_normalizado, meses_forecast, start_forecast):
 def treinando_tendencia(df_normalizado, meses_forecast, treinar_novo_modelo):
     #### SARIMAX 3 ANOS
     from statsmodels.tsa.statespace.sarimax import SARIMAX
-    SARIMA_model_trend = SARIMAX(df_normalizado['trend'].loc[df_normalizado.index <= meses_forecast[0]].dropna(), order=(6, 0, 1),
-                                 seasonal_order=(1, 0, 1, 52), simple_differencing=False)
+    SARIMA_model_trend = SARIMAX(df_normalizado['trend'].loc[df_normalizado.index <= meses_forecast[0]].dropna(), order=(2, 1, 1),
+                                 seasonal_order=(1, 1, 1, 52), simple_differencing=False)
     SARIMA_model_fit_trend = SARIMA_model_trend.fit(disp=True)
     forecast_result_trend = SARIMA_model_fit_trend.get_forecast(steps=52 * 10)
 
@@ -138,9 +138,9 @@ def treinando_tendencia(df_normalizado, meses_forecast, treinar_novo_modelo):
         # Treinar com early stopping
         early_stopping = EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
         model.fit(X_train, Y_train, batch_size=32, epochs=300, validation_data=(X_test, Y_test), callbacks=[early_stopping])
-        model.save('lstm_model.h5')
+        model.save('lstm_model2.h5')
     else:
-        model = load_model('lstm_model.h5')
+        model = load_model('lstm_model2.h5')
 
     # Previsão e projeção da tendência
     train_predict = model.predict(X_train)
@@ -325,7 +325,7 @@ def treinando_residuo(df_, forecast_result_seasonal, meses_forecast):
 
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
-    treinar_novo_modelo = False
+    treinar_novo_modelo = True
 
     df_normalizado, scaler_LPC = preparacao_dados('db.csv', ';')
 
@@ -340,10 +340,15 @@ if __name__ == '__main__':
     meses_validation = pd.date_range(start=start_validation, end=end_validation, freq='W')
 
     forecast_result_seasonal = treinando_sazonalidade(df_normalizado,meses_forecast, start_forecast)
+    forecast_result_seasonal.plot()
+    plt.show()
     print(forecast_result_seasonal)
 
 
     forecast_result_trend = treinando_tendencia(df_normalizado, meses_forecast, treinar_novo_modelo)
+    forecast_result_trend.plot()
+    plt.show()
+
     print(forecast_result_trend)
 
     df_predictions = treinando_residuo(df_normalizado, forecast_result_seasonal, meses_forecast)
@@ -361,6 +366,10 @@ if __name__ == '__main__':
     df_retro_10anos['forecast_normalize'] = forecast_result_seasonal + forecast_result_trend + df_retro_10anos['pred_residual']
     df_retro_10anos['forecast'] = scaler_LPC.inverse_transform(df_retro_10anos['forecast_normalize'].values.reshape(-1, 1))
 
+    df_retro_10anos['pred_residual'].plot()
+    plt.show()
+
+
     df_resultado = pd.DataFrame()
 
     df_resultado['forecast'] = df_retro_10anos['forecast']
@@ -371,3 +380,5 @@ if __name__ == '__main__':
 
     df_resultado.to_csv("resultForecast.csv", sep=';', decimal=',')
 
+    df_resultado.plot()
+    plt.show()
